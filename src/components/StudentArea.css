@@ -1,0 +1,86 @@
+/* src/components/StudentArea.css */
+.student-area-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding-top: 80px; /* Space for the fixed nav bar */
+}
+
+.student-area-header {
+  margin-bottom: 32px;
+  padding: 24px;
+  background-color: var(--bg-alt);
+  border-radius: 12px;
+  border: 1px solid var(--border);
+}
+
+.student-area-header h1 {
+  font-size: 28px;
+  color: var(--text-h);
+  margin: 0 0 8px 0;
+}
+
+.student-area-header p {
+  font-size: 16px;
+  color: var(--text);
+  margin: 0;
+}
+
+.student-area-main {
+  padding: 0 24px 24px 24px;
+}
+
+.start-quiz-card {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  background-color: var(--bg-alt);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 24px;
+  cursor: pointer;
+  transition: all 0.2s ease-in-out;
+  box-shadow: var(--shadow-sm);
+}
+
+.start-quiz-card:hover {
+  border-color: var(--accent);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+}
+
+.start-quiz-icon {
+  flex-shrink: 0;
+  width: 48px;
+  height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: var(--accent-bg);
+  color: var(--accent);
+  border-radius: 50%;
+}
+
+.start-quiz-icon svg {
+  width: 24px;
+  height: 24px;
+}
+
+.start-quiz-info {
+  flex-grow: 1;
+}
+
+.start-quiz-info h2 {
+  margin: 0 0 4px 0;
+  font-size: 18px;
+  color: var(--text-h);
+}
+
+.start-quiz-info p {
+  margin: 0;
+  font-size: 15px;
+  color: var(--text);
+}
+
+.start-quiz-arrow {
+  color: var(--border-dark);
+}

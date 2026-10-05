@@ -5,6 +5,7 @@ import Login from './components/Login.jsx'
 import ForgotPassword from './components/ForgotPassword.jsx'
 import SignUp from './components/SignUp.jsx'
 import AdminQuestions from './components/AdminQuestions.jsx'
+import StudentArea from './components/StudentArea.jsx'
 import './components/LandingPage.css'
 import './App.css'
 
@@ -12,7 +13,7 @@ import './App.css'
 const getInitialTheme = () => {
   const savedTheme = localStorage.getItem('theme')
   if (savedTheme) return savedTheme
-  
+
   const systemPrefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches
   return systemPrefersDark ? 'dark' : 'light'
 }
@@ -22,7 +23,7 @@ function App() {
   const [theme, setTheme] = useState(getInitialTheme)
 
   // Navigation & User Session States
-  const [view, setView] = useState('landing') // 'landing' | 'login' | 'forgot-password' | 'signup' | 'admin-questions'
+  const [view, setView] = useState('landing') // 'landing' | 'login' | 'forgot-password' | 'signup' | 'admin-questions' | 'student-area'
   const [user, setUser] = useState(null) // null | { email, name, uid }
   const [authLoading, setAuthLoading] = useState(true)
 
@@ -84,10 +85,10 @@ function App() {
         fontFamily: 'var(--sans)'
       }}>
         {/* Spinner utilizing Auth styles */}
-        <div className="spinner" style={{ 
-          width: '32px', 
-          height: '32px', 
-          borderTopColor: 'var(--accent)', 
+        <div className="spinner" style={{
+          width: '32px',
+          height: '32px',
+          borderTopColor: 'var(--accent)',
           borderWidth: '3px',
           borderColor: 'var(--border)'
         }}></div>
@@ -155,7 +156,7 @@ function App() {
           </button>
 
           {/* Admin Questions Link */}
-          <button 
+          <button
             onClick={() => setView(view === 'admin-questions' ? 'landing' : 'admin-questions')}
             className="nav-btn nav-btn-outline"
             style={{ fontWeight: view === 'admin-questions' ? '700' : '600' }}
@@ -205,6 +206,8 @@ function App() {
         />
       ) : view === 'admin-questions' ? (
         <AdminQuestions />
+      ) : view === 'student-area' ? (
+        <StudentArea user={user} />
       ) : (
         /* Customized Academic Landing Page View */
         <div className="landing-container">
@@ -229,12 +232,12 @@ function App() {
               Sua aprovação no <span>PPGI</span> começa aqui.
             </h1>
             <p className="hero-description">
-              A plataforma definitiva de estudos para candidatos ao Programa de Pós-Graduação em Informática. 
+              A plataforma definitiva de estudos para candidatos ao Programa de Pós-Graduação em Informática.
               Acesse cronogramas, materiais de estudo estruturados, simulados de provas anteriores e mentorias dedicadas.
             </p>
             <div className="hero-actions">
               {user ? (
-                <button className="nav-btn nav-btn-primary" style={{ padding: '12px 24px', fontSize: '16px' }}>
+                <button onClick={() => setView('student-area')} className="nav-btn nav-btn-primary" style={{ padding: '12px 24px', fontSize: '16px' }}>
                   Ir para a Área do Aluno
                 </button>
               ) : (
@@ -317,7 +320,7 @@ function App() {
               <h2>Eleve o Nível dos seus Estudos</h2>
               <p>Junte-se a centenas de estudantes e comece a se preparar hoje mesmo de maneira estruturada e focada.</p>
               {user ? (
-                <button className="nav-btn nav-btn-primary" style={{ padding: '12px 24px', fontSize: '16px' }}>
+                <button onClick={() => setView('student-area')} className="nav-btn nav-btn-primary" style={{ padding: '12px 24px', fontSize: '16px' }}>
                   Acessar Painel do Aluno
                 </button>
               ) : (
