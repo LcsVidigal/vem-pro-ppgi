@@ -1,4 +1,6 @@
 import { useState } from 'react'
+import { sendPasswordResetEmail } from 'firebase/auth'
+import { auth } from '../firebase'
 import './Auth.css'
 
 function ForgotPassword({ onBackToLogin, onSignUpClick }) {
@@ -20,22 +22,29 @@ function ForgotPassword({ onBackToLogin, onSignUpClick }) {
     return true
   }
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault()
+    if (isLoading) return
     if (!validateEmail()) return
 
     setIsLoading(true)
 
-    // Simulate Firebase sendPasswordResetEmail call
-    setTimeout(() => {
-      setIsLoading(false)
-      
-      if (email === 'erro@ppgi.com') {
-        setError('Erro ao enviar e-mail: Usuário não encontrado no sistema.')
-      } else {
+    try {
+      await sendPasswordResetEmail(auth, email.trim())
+      setIsSuccess(true)
+    } catch (err) {
+      if (err.code === 'auth/user-not-found') {
         setIsSuccess(true)
+      } else if (err.code === 'auth/too-many-requests') {
+        setError('Muitas tentativas. Aguarde alguns minutos antes de tentar novamente.')
+      } else if (err.code === 'auth/network-request-failed') {
+        setError('Não foi possível conectar. Verifique sua conexão e tente novamente.')
+      } else {
+        setError('Não foi possível solicitar a recuperação de senha. Tente novamente.')
       }
-    }, 1200)
+    } finally {
+      setIsLoading(false)
+    }
   }
 
   return (
@@ -77,8 +86,8 @@ function ForgotPassword({ onBackToLogin, onSignUpClick }) {
                 <polyline points="22 4 12 14.01 9 11.01" />
               </svg>
               <div>
-                <strong style={{ display: 'block', marginBottom: '4px' }}>E-mail enviado com sucesso!</strong>
-                Enviamos um link de redefinição para <strong>{email}</strong>. Verifique sua caixa de entrada e de spam.
+                <strong style={{ display: 'block', marginBottom: '4px' }}>Solicitação recebida!</strong>
+                Se houver uma conta com <strong>{email.trim()}</strong>, você receberá um link de redefinição. Verifique sua caixa de entrada e de spam.
               </div>
             </div>
 

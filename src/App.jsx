@@ -1,10 +1,11 @@
 import { useState, useEffect } from 'react'
-import { onAuthStateChanged, signOut } from 'firebase/auth'
+import { onIdTokenChanged, signOut } from 'firebase/auth'
 import { auth } from './firebase'
 import Login from './components/Login.jsx'
 import ForgotPassword from './components/ForgotPassword.jsx'
 import SignUp from './components/SignUp.jsx'
 import AdminQuestions from './components/AdminQuestions.jsx'
+import QuizResult from './components/QuizResult.jsx'
 import './components/LandingPage.css'
 import './App.css'
 
@@ -40,12 +41,19 @@ function App() {
 
   // Listen to Firebase Authentication State Changes
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
+    let revision = 0
+    const unsubscribe = onIdTokenChanged(auth, async (currentUser) => {
+      const currentRevision = ++revision
       if (currentUser) {
+        let admin = false
+        try { admin = (await currentUser.getIdTokenResult()).claims.admin === true }
+        catch { /* Fail closed if the profile cannot be verified. */ }
+        if (currentRevision !== revision) return
         setUser({
           email: currentUser.email,
-          name: currentUser.email.split('@')[0].toUpperCase(),
-          uid: currentUser.uid
+          name: currentUser.displayName || currentUser.email?.split('@')[0].toUpperCase() || 'Aluno',
+          uid: currentUser.uid,
+          admin
         })
       } else {
         setUser(null)
@@ -53,7 +61,7 @@ function App() {
       setAuthLoading(false)
     })
 
-    return () => unsubscribe()
+    return () => { revision++; unsubscribe() }
   }, [])
 
   const handleLoginSuccess = () => {
@@ -155,13 +163,13 @@ function App() {
           </button>
 
           {/* Admin Questions Link */}
-          <button 
+          {user?.admin && <button
             onClick={() => setView(view === 'admin-questions' ? 'landing' : 'admin-questions')}
             className="nav-btn nav-btn-outline"
             style={{ fontWeight: view === 'admin-questions' ? '700' : '600' }}
           >
             {view === 'admin-questions' ? 'Ver Site' : 'Questões (Admin)'}
-          </button>
+          </button>}
 
           {view !== 'landing' && view !== 'admin-questions' ? (
             <button onClick={() => setView('landing')} className="nav-btn nav-btn-outline">
@@ -203,8 +211,11 @@ function App() {
           onSignUpSuccess={handleLoginSuccess}
           onBackToLogin={() => setView('login')}
         />
+      ) : view === 'quiz' ? (
+        user ? <QuizResult key={user.uid} user={user} onBack={() => setView('landing')} /> :
+        <Login onLoginSuccess={() => setView('quiz')} onForgotPasswordClick={() => setView('forgot-password')} onSignUpClick={() => setView('signup')} />
       ) : view === 'admin-questions' ? (
-        <AdminQuestions />
+        user?.admin ? <AdminQuestions /> : <p role="alert">Acesso restrito a administradores.</p>
       ) : (
         /* Customized Academic Landing Page View */
         <div className="landing-container">
@@ -233,8 +244,11 @@ function App() {
               Acesse cronogramas, materiais de estudo estruturados, simulados de provas anteriores e mentorias dedicadas.
             </p>
             <div className="hero-actions">
+              <button onClick={() => setView('quiz')} className="nav-btn nav-btn-outline" style={{ padding: '12px 24px', fontSize: '16px' }}>
+                Correção
+              </button>
               {user ? (
-                <button className="nav-btn nav-btn-primary" style={{ padding: '12px 24px', fontSize: '16px' }}>
+                <button onClick={() => setView('quiz')} className="nav-btn nav-btn-primary" style={{ padding: '12px 24px', fontSize: '16px' }}>
                   Ir para a Área do Aluno
                 </button>
               ) : (
@@ -317,7 +331,7 @@ function App() {
               <h2>Eleve o Nível dos seus Estudos</h2>
               <p>Junte-se a centenas de estudantes e comece a se preparar hoje mesmo de maneira estruturada e focada.</p>
               {user ? (
-                <button className="nav-btn nav-btn-primary" style={{ padding: '12px 24px', fontSize: '16px' }}>
+                <button onClick={() => setView('quiz')} className="nav-btn nav-btn-primary" style={{ padding: '12px 24px', fontSize: '16px' }}>
                   Acessar Painel do Aluno
                 </button>
               ) : (

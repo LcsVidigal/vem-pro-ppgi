@@ -52,6 +52,7 @@ const INITIAL_QUESTIONS = [
 function AdminQuestions() {
   const [questions, setQuestions] = useState([])
   const [loading, setLoading] = useState(true)
+  const [loadError, setLoadError] = useState('')
   const [isSeeding, setIsSeeding] = useState(false)
   const [toastMessage, setToastMessage] = useState(null)
 
@@ -65,6 +66,8 @@ function AdminQuestions() {
   const [editAuthor, setEditAuthor] = useState('')
   const [editOptions, setEditOptions] = useState([])
   const [editCorrectAnswer, setEditCorrectAnswer] = useState('A')
+  const [editExplanation, setEditExplanation] = useState('')
+  const [editPublished, setEditPublished] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
 
   // 1. Listen to Cloud Firestore real-time updates (onSnapshot)
@@ -82,6 +85,7 @@ function AdminQuestions() {
       setLoading(false)
     }, (error) => {
       console.error("Firestore Loading Error (Check Security Rules):", error)
+      setLoadError('Não foi possível carregar as questões. Verifique sua conexão e permissão de administrador.')
       setLoading(false)
     })
 
@@ -96,20 +100,9 @@ function AdminQuestions() {
     }, 3500)
   }
 
-  // 2. Open Add Modal (Auto-generates sequential ID Q-10X)
+  // Firestore IDs avoid collisions between administrators creating questions concurrently.
   const handleOpenAddModal = () => {
-    let nextId = 'Q-101'
-    if (questions.length > 0) {
-      // Find the maximum numeric ID currently active in Firestore
-      const idNumbers = questions.map((q) => {
-        const num = parseInt(q.id.replace('Q-', ''), 10)
-        return isNaN(num) ? 0 : num
-      })
-      const maxId = Math.max(...idNumbers)
-      nextId = `Q-${maxId + 1}`
-    }
-
-    setEditingQuestion({ id: nextId, isNew: true })
+    setEditingQuestion({ id: doc(collection(db, 'questions')).id, isNew: true })
     setEditPrompt('')
     setEditCategory('')
     setEditAuthor('')
@@ -121,6 +114,8 @@ function AdminQuestions() {
       { letter: 'E', text: '' }
     ])
     setEditCorrectAnswer('A')
+    setEditExplanation('')
+    setEditPublished(false)
   }
 
   // 3. Open Edit Modal with selected question's current data
@@ -137,10 +132,16 @@ function AdminQuestions() {
       { letter: 'E', text: '' }
     ])
     setEditCorrectAnswer(q.correctAnswer || 'A')
+    setEditExplanation(q.explanation || '')
+    setEditPublished(q.published === true)
   }
 
   // 4. Submit Add or Edit modifications directly to Firestore Database
   const handleSaveQuestion = async () => {
+    if (!editExplanation.trim()) {
+      alert('Preencha a resolução detalhada da questão.')
+      return
+    }
     if (!editPrompt.trim() || !editCategory.trim() || !editAuthor.trim()) {
       alert("Por favor, preencha o enunciado, assunto e o autor da questão.")
       return
@@ -156,11 +157,13 @@ function AdminQuestions() {
     try {
       const docRef = doc(db, "questions", editingQuestion.id)
       const questionPayload = {
-        category: editCategory,
-        prompt: editPrompt,
-        author: editAuthor,
-        options: editOptions,
-        correctAnswer: editCorrectAnswer
+        category: editCategory.trim(),
+        prompt: editPrompt.trim(),
+        author: editAuthor.trim(),
+        options: editOptions.map(({ letter, text }) => ({ letter, text: text.trim() })),
+        correctAnswer: editCorrectAnswer,
+        explanation: editExplanation.trim(),
+        published: editPublished
       }
 
       // Write directly to Cloud Firestore (Works for both creation and updates)
@@ -200,7 +203,11 @@ function AdminQuestions() {
     setIsSeeding(true)
     try {
       for (const q of INITIAL_QUESTIONS) {
-        await setDoc(doc(db, "questions", q.id), q)
+        const { id: _id, ...question } = q
+        await setDoc(doc(collection(db, 'questions')), {
+          ...question, published: false,
+          explanation: q.options.find(option => option.letter === q.correctAnswer).text
+        })
       }
       showToast("Banco de dados semeado com sucesso!")
     } catch (err) {
@@ -261,7 +268,7 @@ function AdminQuestions() {
         </button>
       </div>
 
-      {loading ? (
+      {loadError ? <p role="alert" className="auth-alert error">{loadError}</p> : loading ? (
         /* Loader while listening to Firestore */
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '64px' }}>
           <div className="spinner" style={{ width: '32px', height: '32px', borderTopColor: 'var(--accent)', borderWidth: '3px', borderColor: 'var(--border)' }}></div>
@@ -526,6 +533,14 @@ function AdminQuestions() {
               </div>
 
               {/* Gabarito Selector */}
+              <div className="form-group">
+                <label className="form-label" htmlFor="question-explanation">Resolução detalhada</label>
+                <textarea id="question-explanation" className="auth-input" rows={6} maxLength={20000}
+                  value={editExplanation} onChange={event => setEditExplanation(event.target.value)} disabled={isSaving} />
+              </div>
+              <label className="form-label">
+                <input type="checkbox" checked={editPublished} onChange={event => setEditPublished(event.target.checked)} disabled={isSaving} /> Disponível para alunos
+              </label>
               <div className="form-group correct-select-wrapper">
                 <label className="form-label">Gabarito Oficial (Alternativa Correta)</label>
                 <select

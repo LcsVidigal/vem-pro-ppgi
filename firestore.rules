@@ -1,0 +1,40 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function admin() {
+      return request.auth != null && request.auth.token.admin == true;
+    }
+    function text(value, max) {
+      return value is string && value.size() > 0 && value.size() <= max;
+    }
+    function option(value, letter) {
+      return value is map && value.keys().hasOnly(['letter', 'text'])
+        && value.letter == letter && text(value.text, 3000);
+    }
+    function question(q) {
+      return q.keys().hasAll(['prompt', 'category', 'author', 'options', 'correctAnswer', 'explanation', 'published'])
+        && q.keys().hasOnly(['prompt', 'category', 'author', 'options', 'correctAnswer', 'explanation', 'published'])
+        && text(q.prompt, 10000) && text(q.category, 200) && text(q.author, 200)
+        && text(q.explanation, 20000) && q.published is bool
+        && q.correctAnswer in ['A', 'B', 'C', 'D', 'E']
+        && q.options is list && q.options.size() == 5
+        && option(q.options[0], 'A') && option(q.options[1], 'B')
+        && option(q.options[2], 'C') && option(q.options[3], 'D') && option(q.options[4], 'E');
+    }
+    // The existing bank includes answer keys; students use the callable projection only.
+    match /questions/{id} {
+      allow read, delete: if admin();
+      allow create, update: if admin() && question(request.resource.data);
+    }
+    match /attempts/{id} {
+      allow read, write: if false;
+    }
+    match /results/{id} {
+      allow read: if request.auth != null && resource.data.ownerId == request.auth.uid;
+      allow write: if false;
+    }
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
