@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { signInWithEmailAndPassword } from 'firebase/auth'
+import { signInWithEmailAndPassword, setPersistence, browserLocalPersistence, browserSessionPersistence } from 'firebase/auth'
 import { auth } from '../firebase'
 import './Auth.css'
 
@@ -60,6 +60,7 @@ function Login({ onLoginSuccess, onForgotPasswordClick, onSignUpClick }) {
 
   const handleSubmit = async (e) => {
     e.preventDefault()
+    if (isLoading) return
     setServerError('')
     
     if (!validateForm()) return
@@ -68,7 +69,8 @@ function Login({ onLoginSuccess, onForgotPasswordClick, onSignUpClick }) {
 
     try {
       // Direct Firebase Authentication Call
-      const userCredential = await signInWithEmailAndPassword(auth, email, password)
+      await setPersistence(auth, rememberMe ? browserLocalPersistence : browserSessionPersistence)
+      const userCredential = await signInWithEmailAndPassword(auth, email.trim(), password)
       
       // Successfully authenticated
       const userObject = userCredential.user
