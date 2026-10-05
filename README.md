@@ -8,27 +8,43 @@ para baixar dependencias e emuladores. Nao e necessario acessar o projeto Fireba
 
 1. Clone o repositorio e entre na pasta que contem `package.json`.
 2. Execute `npm ci` e `npm ci --prefix functions`.
-3. No primeiro terminal PowerShell:
+3. Execute em um unico terminal:
+
+```powershell
+npm run demo
+```
+
+O comando verifica Node e Java, inicia Authentication/Firestore/Functions, confirma que as duas
+funcoes estao disponiveis, carrega as cinco questoes e abre o navegador. Se a porta do Vite estiver
+ocupada, ele escolhe outra e informa a URL. Mantenha o terminal aberto; Ctrl+C encerra os processos
+iniciados pelo comando. Se houver emuladores antigos ocupando as portas, encerre-os primeiro.
+
+Entre com `aluno@example.test` e senha `TesteLocal123!`. Para o painel administrativo,
+use `admin@example.test` com a mesma senha. As contas sao exclusivamente locais.
+
+## Inicializacao manual (alternativa)
+
+No primeiro terminal PowerShell:
 
 ```powershell
 $env:FUNCTIONS_DISCOVERY_TIMEOUT = '60'
 npm run emulators
 ```
 
-4. Aguarde os emuladores iniciarem e as funcoes `startAttempt` e `submitAttempt` serem carregadas.
-5. Em outro terminal, na mesma pasta:
+Aguarde os emuladores iniciarem e as funcoes `startAttempt` e `submitAttempt` serem carregadas.
+Em outro terminal, na mesma pasta:
 
 ```powershell
 npm run seed:emulators
 npm run dev:emulators
 ```
 
-6. Abra a URL exibida pelo Vite. Entre com `aluno@example.test` e senha `TesteLocal123!`.
+Abra a URL exibida pelo Vite. Entre com `aluno@example.test` e senha `TesteLocal123!`.
    Para testar o painel administrativo, use `admin@example.test` com a mesma senha local.
-7. Acesse Correcao e inicie uma tentativa. Se houver um resultado antigo com tres questoes,
+Acesse Correcao e inicie uma tentativa. Se houver um resultado antigo com tres questoes,
    clique em Nova tentativa para carregar as cinco questoes atuais.
 
-Em macOS/Linux, o passo 3 pode ser executado com
+Em macOS/Linux, o inicio manual dos emuladores pode ser executado com
 `FUNCTIONS_DISCOVERY_TIMEOUT=60 npm run emulators`.
 
 Mantenha os dois terminais abertos durante a demonstracao. Os dados locais nao vao para o Git:
