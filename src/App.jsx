@@ -5,6 +5,7 @@ import Login from './components/Login.jsx'
 import ForgotPassword from './components/ForgotPassword.jsx'
 import SignUp from './components/SignUp.jsx'
 import AdminQuestions from './components/AdminQuestions.jsx'
+import AdminExams from './components/AdminExams.jsx'
 import StudentArea from './components/StudentArea.jsx'
 import './components/LandingPage.css'
 import './App.css'
@@ -164,7 +165,16 @@ function App() {
             {view === 'admin-questions' ? 'Ver Site' : 'Questões (Admin)'}
           </button>
 
-          {view !== 'landing' && view !== 'admin-questions' ? (
+          {/* Admin Exams (PDF) Link */}
+          <button
+            onClick={() => setView(view === 'admin-exams' ? 'landing' : 'admin-exams')}
+            className="nav-btn nav-btn-outline"
+            style={{ fontWeight: view === 'admin-exams' ? '700' : '600' }}
+          >
+            {view === 'admin-exams' ? 'Ver Site' : 'Provas (Admin)'}
+          </button>
+
+          {view !== 'landing' && view !== 'admin-questions' && view !== 'admin-exams' ? (
             <button onClick={() => setView('landing')} className="nav-btn nav-btn-outline">
               Voltar ao Início
             </button>
@@ -205,7 +215,9 @@ function App() {
           onBackToLogin={() => setView('login')}
         />
       ) : view === 'admin-questions' ? (
-        <AdminQuestions />
+        <AdminQuestions onNavigate={(target) => setView(target)} />
+      ) : view === 'admin-exams' ? (
+        <AdminExams onNavigate={(target) => setView(target)} user={user} />
       ) : view === 'student-area' ? (
         <StudentArea user={user} />
       ) : (

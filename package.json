@@ -5,12 +5,14 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "server": "node server/index.js",
     "build": "vite build",
     "lint": "oxlint",
     "preview": "vite preview"
   },
   "dependencies": {
     "firebase": "^12.19.0",
+    "googleapis": "^186.0.0",
     "react": "^19.2.8",
     "react-dom": "^19.2.8"
   },
