@@ -4,11 +4,13 @@ import { db } from '../firebase'
 import { INITIAL_QUESTIONS } from '../data/initialQuestions'
 import { PREDEFINED_AREAS } from '../data/predefinedAreas'
 import StudentQuiz from './StudentQuiz'
+import StudentSimulado from './StudentSimulado'
 import './StudentArea.css'
 
 function StudentArea({ user }) {
-  // Navigation views inside Student Area: 'dashboard' | 'select_area' | 'track' | 'track_study' | 'quiz'
+  // Navigation views inside Student Area: 'dashboard' | 'select_area' | 'track' | 'track_study' | 'quiz' | 'simulado' | 'exams'
   const [currentView, setCurrentView] = useState('dashboard')
+  const [simuladoInitialTab, setSimuladoInitialTab] = useState('exam') // 'exam' | 'history'
 
   // Pool of all questions available (from Firestore or initialQuestions fallback)
   const [allQuestions, setAllQuestions] = useState(INITIAL_QUESTIONS)
@@ -21,6 +23,17 @@ function StudentArea({ user }) {
       return cached ? JSON.parse(cached) : null
     } catch {
       return null
+    }
+  })
+
+  // Histórico de Simulados (15 questões / 30 minutos)
+  const [simuladoHistory, setSimuladoHistory] = useState(() => {
+    const historyKey = user?.uid ? `simulado_history_${user.uid}` : 'simulado_history_guest'
+    try {
+      const cached = localStorage.getItem(historyKey)
+      return cached ? JSON.parse(cached) : []
+    } catch {
+      return []
     }
   })
 
@@ -162,6 +175,76 @@ function StudentArea({ user }) {
 
     return () => unsubscribe()
   }, [user?.uid])
+
+  // 2.1 Sincroniza Histórico de Simulados com Firestore e LocalStorage
+  useEffect(() => {
+    const historyKey = user?.uid ? `simulado_history_${user.uid}` : 'simulado_history_guest'
+    try {
+      const cached = localStorage.getItem(historyKey)
+      if (cached) {
+        setSimuladoHistory(JSON.parse(cached))
+      }
+    } catch {
+      // ignore parse errors
+    }
+
+    if (!user?.uid) return
+
+    const historyDocRef = doc(db, 'simulado_history', user.uid)
+    const unsubscribe = onSnapshot(
+      historyDocRef,
+      (docSnap) => {
+        if (docSnap.exists()) {
+          const data = docSnap.data()
+          if (Array.isArray(data.attempts)) {
+            setSimuladoHistory(data.attempts)
+            localStorage.setItem(historyKey, JSON.stringify(data.attempts))
+          }
+        }
+      },
+      (error) => {
+        console.warn('Aviso ao sincronizar histórico de simulados com Firestore:', error)
+      }
+    )
+
+    return () => unsubscribe()
+  }, [user?.uid])
+
+  // Salva nova tentativa no histórico de simulados
+  const handleSaveSimuladoAttempt = async (attemptRecord) => {
+    const historyKey = user?.uid ? `simulado_history_${user.uid}` : 'simulado_history_guest'
+    const updatedHistory = [attemptRecord, ...simuladoHistory]
+    setSimuladoHistory(updatedHistory)
+    localStorage.setItem(historyKey, JSON.stringify(updatedHistory))
+
+    if (user?.uid) {
+      try {
+        const historyDocRef = doc(db, 'simulado_history', user.uid)
+        await setDoc(historyDocRef, {
+          updatedAt: new Date().toISOString(),
+          attempts: updatedHistory
+        })
+      } catch (err) {
+        console.warn('Histórico salvo localmente (aviso do Firestore):', err)
+      }
+    }
+  }
+
+  // Limpa o histórico de simulados do aluno
+  const handleClearSimuladoHistory = async () => {
+    const historyKey = user?.uid ? `simulado_history_${user.uid}` : 'simulado_history_guest'
+    setSimuladoHistory([])
+    localStorage.removeItem(historyKey)
+
+    if (user?.uid) {
+      try {
+        const historyDocRef = doc(db, 'simulado_history', user.uid)
+        await deleteDoc(historyDocRef)
+      } catch (err) {
+        console.warn('Aviso ao limpar histórico no Firestore:', err)
+      }
+    }
+  }
 
   // Helper to persist study track to Firestore and LocalStorage (CA04)
   const saveTrack = async (updatedTrack) => {
@@ -362,6 +445,20 @@ function StudentArea({ user }) {
     return <StudentQuiz onFinish={() => setCurrentView('dashboard')} />
   }
 
+  // Render Simulado Cronometrado (15 Questões / 30 Minutos)
+  if (currentView === 'simulado') {
+    return (
+      <StudentSimulado
+        questionsPool={allQuestions}
+        initialTab={simuladoInitialTab}
+        history={simuladoHistory}
+        onSaveHistory={handleSaveSimuladoAttempt}
+        onClearHistory={handleClearSimuladoHistory}
+        onFinish={() => setCurrentView('dashboard')}
+      />
+    )
+  }
+
   return (
     <div className="student-area-container">
       {/* Student Area Header & Welcome Banner */}
@@ -411,8 +508,8 @@ function StudentArea({ user }) {
             </svg>
           </div>
           <div className="quick-stat-info">
-            <h4>Em Andamento</h4>
-            <p className="value">{inProgressCount} Questões</p>
+            <h4>Simulados Realizados</h4>
+            <p className="value">{simuladoHistory.length} Simulado(s)</p>
           </div>
         </div>
 
@@ -491,6 +588,67 @@ function StudentArea({ user }) {
                     Montar Minha Trilha
                   </button>
                 )}
+              </div>
+            </article>
+
+            {/* CARD: Simulado Cronometrado (15 Questões / 30 Minutos) */}
+            <article className="student-dashboard-card">
+              <div className="card-top-row">
+                <div className="card-icon-wrapper" style={{ background: 'rgba(245, 158, 11, 0.14)', color: '#f59e0b' }}>
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                    <circle cx="12" cy="12" r="10" />
+                    <polyline points="12 6 12 12 16 14" />
+                  </svg>
+                </div>
+                <span className="card-tag" style={{ color: '#f59e0b', background: 'rgba(245, 158, 11, 0.15)' }}>
+                  15 Questões • 30 Minutos
+                </span>
+              </div>
+
+              <h2 className="card-title">Simulado Cronometrado</h2>
+              <p className="card-description">
+                Teste seus conhecimentos em condições reais de prova: responda 15 questões aleatórias em até 30 minutos. Ao esgotar o tempo, a prova é encerrada automaticamente e salva no seu histórico.
+              </p>
+
+              {simuladoHistory.length > 0 && (
+                <div className="card-mini-progress" style={{ marginBottom: '16px' }}>
+                  <div className="mini-progress-labels">
+                    <span>Último Simulado</span>
+                    <span>
+                      {simuladoHistory[0].correctCount}/{simuladoHistory[0].totalQuestions} acertos ({simuladoHistory[0].accuracyPercent}%)
+                    </span>
+                  </div>
+                  <div className="mini-indicators-row" style={{ marginTop: '6px' }}>
+                    <span className="mini-badge completed">
+                      🏆 {simuladoHistory.length} realizado(s)
+                    </span>
+                    <span className="mini-badge in-progress">
+                      ⏱️ Último tempo: {Math.floor((simuladoHistory[0].durationSeconds || 0) / 60)}m {(simuladoHistory[0].durationSeconds || 0) % 60}s
+                    </span>
+                  </div>
+                </div>
+              )}
+
+              <div className="card-actions">
+                <button
+                  onClick={() => {
+                    setSimuladoInitialTab('exam')
+                    setCurrentView('simulado')
+                  }}
+                  className="nav-btn nav-btn-primary"
+                  style={{ background: '#f59e0b', borderColor: '#f59e0b' }}
+                >
+                  Iniciar Simulado (30 min)
+                </button>
+                <button
+                  onClick={() => {
+                    setSimuladoInitialTab('history')
+                    setCurrentView('simulado')
+                  }}
+                  className="nav-btn nav-btn-outline"
+                >
+                  Histórico ({simuladoHistory.length})
+                </button>
               </div>
             </article>
 

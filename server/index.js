@@ -1,5 +1,6 @@
 import http from 'http'
 import { uploadPdfToDrive, deleteFileFromDrive, testDriveConnection, listDriveFiles } from './driveService.js'
+import { extractQuestionsFromPdf } from './geminiService.js'
 
 const PORT = process.env.PORT || 3001
 
@@ -15,6 +16,40 @@ const server = http.createServer(async (req, res) => {
   if (req.method === 'OPTIONS') {
     res.statusCode = 204
     res.end()
+    return
+  }
+
+  // Extract questions from PDF via Gemini AI
+  if (req.url === '/api/extract-questions' && req.method === 'POST') {
+    const chunks = []
+    req.on('data', (chunk) => chunks.push(chunk))
+    req.on('end', async () => {
+      try {
+        const bodyText = Buffer.concat(chunks).toString('utf8')
+        const { examPdfBase64, answerKeyPdfBase64, yearSemester, author, apiKey } = JSON.parse(bodyText)
+
+        if (!examPdfBase64) {
+          res.writeHead(400, { 'Content-Type': 'application/json' })
+          res.end(JSON.stringify({ success: false, error: 'O PDF da prova é obrigatório.' }))
+          return
+        }
+
+        const result = await extractQuestionsFromPdf({
+          examPdfBase64,
+          answerKeyPdfBase64,
+          yearSemester: yearSemester || '2025/1',
+          author: author || 'Banca PPGI UFAM',
+          apiKey
+        })
+
+        res.writeHead(200, { 'Content-Type': 'application/json' })
+        res.end(JSON.stringify(result))
+      } catch (err) {
+        console.error('Erro na extração de questões com Gemini:', err)
+        res.writeHead(500, { 'Content-Type': 'application/json' })
+        res.end(JSON.stringify({ success: false, error: err.message }))
+      }
+    })
     return
   }
 

@@ -1,0 +1,428 @@
+/* src/components/StudentSimulado.css */
+
+.simulado-wrapper {
+  width: 100%;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 24px 48px 24px;
+  box-sizing: border-box;
+  text-align: left;
+}
+
+@media (max-width: 768px) {
+  .simulado-wrapper {
+    padding: 0 16px 32px 16px;
+  }
+}
+
+/* Timer Box */
+.simulado-timer-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 14px 16px;
+  border-radius: 12px;
+  background: rgba(245, 158, 11, 0.1);
+  border: 1.5px solid rgba(245, 158, 11, 0.35);
+  margin-bottom: 16px;
+  transition: all 0.3s ease;
+}
+
+.simulado-timer-card.warning {
+  background: rgba(249, 115, 22, 0.15);
+  border-color: rgba(249, 115, 22, 0.5);
+}
+
+.simulado-timer-card.danger {
+  background: rgba(239, 68, 68, 0.16);
+  border-color: #ef4444;
+  animation: pulseTimer 1s infinite alternate;
+}
+
+@keyframes pulseTimer {
+  0% {
+    box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.3);
+  }
+  100% {
+    box-shadow: 0 0 0 6px rgba(239, 68, 68, 0);
+  }
+}
+
+.timer-label-col {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.timer-label-col span {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  color: var(--text);
+}
+
+.timer-clock-value {
+  font-size: 24px;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  color: #f59e0b;
+  letter-spacing: 0.5px;
+}
+
+.simulado-timer-card.warning .timer-clock-value {
+  color: #f97316;
+}
+
+.simulado-timer-card.danger .timer-clock-value {
+  color: #ef4444;
+}
+
+/* Question Grid in Sidebar */
+.simulado-question-grid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 8px;
+  margin-bottom: 20px;
+}
+
+.simulado-grid-btn {
+  height: 40px;
+  border-radius: 8px;
+  border: 1.5px solid var(--border);
+  background: var(--bg);
+  color: var(--text-h);
+  font-weight: 700;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.simulado-grid-btn:hover {
+  border-color: var(--accent);
+}
+
+.simulado-grid-btn.answered {
+  background: rgba(34, 197, 94, 0.14);
+  border-color: rgba(34, 197, 94, 0.45);
+  color: #22c55e;
+}
+
+.simulado-grid-btn.active {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+  box-shadow: 0 2px 8px rgba(170, 59, 255, 0.35);
+}
+
+/* Timeout Banner */
+.timeout-alert-banner {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 16px 20px;
+  border-radius: 12px;
+  background: rgba(239, 68, 68, 0.12);
+  border: 1.5px solid rgba(239, 68, 68, 0.4);
+  color: #ef4444;
+  margin-bottom: 24px;
+  text-align: left;
+}
+
+/* Result & History Cards */
+.simulado-result-header-card {
+  background: var(--bg-alt, rgba(255, 255, 255, 0.02));
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 28px;
+  margin-bottom: 28px;
+  text-align: left;
+}
+
+.simulado-metrics-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 16px;
+  margin-top: 20px;
+}
+
+.simulado-metric-box {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.simulado-metric-box .metric-label {
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  color: var(--text);
+}
+
+.simulado-metric-box .metric-val {
+  font-size: 22px;
+  font-weight: 800;
+  color: var(--text-h);
+}
+
+/* History View */
+.simulado-history-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  margin-top: 20px;
+}
+
+.simulado-history-card {
+  background: var(--bg-alt, rgba(255, 255, 255, 0.02));
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 20px 24px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  flex-wrap: wrap;
+  transition: border-color 0.2s ease, transform 0.15s ease;
+}
+
+.simulado-history-card:hover {
+  border-color: var(--accent);
+  transform: translateY(-1px);
+}
+
+.history-card-left {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.history-card-badges {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.history-badge {
+  font-size: 12px;
+  font-weight: 700;
+  padding: 4px 10px;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.history-badge.score-high {
+  background: rgba(34, 197, 94, 0.15);
+  color: #22c55e;
+}
+
+.history-badge.score-mid {
+  background: rgba(245, 158, 11, 0.15);
+  color: #f59e0b;
+}
+
+.history-badge.score-low {
+  background: rgba(239, 68, 68, 0.15);
+  color: #ef4444;
+}
+
+.history-badge.timeout {
+  background: rgba(239, 68, 68, 0.12);
+  color: #ef4444;
+  border: 1px solid rgba(239, 68, 68, 0.3);
+}
+
+.history-badge.normal {
+  background: rgba(59, 130, 246, 0.12);
+  color: #3b82f6;
+}
+
+.history-meta-row {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+  font-size: 13px;
+  color: var(--text);
+}
+
+/* ============================================================================
+   TELA DE INSTRUÇÕES E REGRAS (INTRO ANTES DE INICIAR O CRONÔMETRO)
+   ============================================================================ */
+.simulado-intro-card {
+  background: var(--bg-alt, rgba(255, 255, 255, 0.02));
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  padding: 32px;
+  margin-top: 12px;
+  box-shadow: var(--shadow, 0 8px 24px rgba(0, 0, 0, 0.06));
+}
+
+.simulado-intro-header {
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 22px;
+  margin-bottom: 24px;
+}
+
+.simulado-intro-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  color: #f59e0b;
+  background: rgba(245, 158, 11, 0.14);
+  border: 1px solid rgba(245, 158, 11, 0.35);
+  padding: 5px 12px;
+  border-radius: 999px;
+  margin-bottom: 12px;
+}
+
+.simulado-intro-header h2 {
+  margin: 0 0 8px 0;
+  font-size: 28px;
+  color: var(--text-h);
+}
+
+.simulado-intro-header p {
+  margin: 0;
+  font-size: 15px;
+  line-height: 1.6;
+  color: var(--text);
+}
+
+.simulado-rules-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.simulado-rule-box {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.simulado-rule-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+  background: rgba(245, 158, 11, 0.14);
+  color: #f59e0b;
+  margin-bottom: 4px;
+}
+
+.simulado-rule-box h4 {
+  margin: 0;
+  font-size: 16px;
+  color: var(--text-h);
+}
+
+.simulado-rule-box p {
+  margin: 0;
+  font-size: 13.5px;
+  line-height: 1.55;
+  color: var(--text);
+}
+
+.simulado-instructions-list {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-left: 4px solid #f59e0b;
+  border-radius: 12px;
+  padding: 20px 24px;
+  margin-bottom: 28px;
+}
+
+.simulado-instructions-list h3 {
+  margin: 0 0 12px 0;
+  font-size: 16px;
+  color: var(--text-h);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.simulado-instructions-list ul {
+  margin: 0;
+  padding-left: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  color: var(--text);
+  font-size: 14px;
+  line-height: 1.55;
+}
+
+.simulado-intro-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 16px;
+  padding-top: 20px;
+  border-top: 1px solid var(--border);
+}
+
+.simulado-start-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  background: #f59e0b;
+  color: #fff;
+  border: none;
+  border-radius: 12px;
+  padding: 14px 28px;
+  font-size: 16px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 4px 14px rgba(245, 158, 11, 0.35);
+}
+
+.simulado-start-btn:hover {
+  background: #d97706;
+  transform: translateY(-1px);
+  box-shadow: 0 6px 18px rgba(245, 158, 11, 0.45);
+}
+
+@media (max-width: 768px) {
+  .simulado-intro-card {
+    padding: 20px;
+  }
+
+  .simulado-intro-footer {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .simulado-start-btn {
+    width: 100%;
+  }
+}
+
+

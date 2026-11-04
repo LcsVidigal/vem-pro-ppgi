@@ -18,10 +18,19 @@ service cloud.firestore {
       allow read, write: if true;
     }
 
-    // 4. Regra geral de desenvolvimento
+    // 4. Histórico de Simulados Cronometrados (15 questões / 30 min)
+    match /simulado_history/{userId} {
+      allow read, write: if true;
+    }
+
+    // 5. Configurações Compartilhadas (ex: token do Gemini em settings/gemini)
+    match /settings/{docId} {
+      allow read, write: if true;
+    }
+
+    // 6. Regra geral de desenvolvimento
     match /{document=**} {
       allow read, write: if true;
     }
   }
 }
-

@@ -1,12 +1,49 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import { uploadPdfToDrive, deleteFileFromDrive, testDriveConnection, listDriveFiles } from './server/driveService.js'
+import { extractQuestionsFromPdf } from './server/geminiService.js'
 
 function googleDriveDevMiddleware() {
   return {
     name: 'google-drive-dev-middleware',
     configureServer(server) {
       server.middlewares.use(async (req, res, next) => {
+        // Extract questions from PDF via Gemini AI
+        if (req.url === '/api/extract-questions' && req.method === 'POST') {
+          const chunks = []
+          req.on('data', (chunk) => chunks.push(chunk))
+          req.on('end', async () => {
+            try {
+              const bodyText = Buffer.concat(chunks).toString('utf8')
+              const { examPdfBase64, answerKeyPdfBase64, yearSemester, author, apiKey } = JSON.parse(bodyText)
+
+              if (!examPdfBase64) {
+                res.statusCode = 400
+                res.setHeader('Content-Type', 'application/json')
+                res.end(JSON.stringify({ success: false, error: 'O PDF da prova é obrigatório.' }))
+                return
+              }
+
+              const result = await extractQuestionsFromPdf({
+                examPdfBase64,
+                answerKeyPdfBase64,
+                yearSemester: yearSemester || '2025/1',
+                author: author || 'Banca PPGI UFAM',
+                apiKey
+              })
+
+              res.setHeader('Content-Type', 'application/json')
+              res.end(JSON.stringify(result))
+            } catch (err) {
+              console.error('Erro na extração de questões via Gemini:', err)
+              res.statusCode = 500
+              res.setHeader('Content-Type', 'application/json')
+              res.end(JSON.stringify({ success: false, error: err.message }))
+            }
+          })
+          return
+        }
+
         // Test connectivity
         if (req.url === '/api/test-drive' && req.method === 'GET') {
           try {
@@ -106,7 +143,7 @@ function googleDriveDevMiddleware() {
   }
 }
 
-// https://vite.dev/config/
+// https://vite.dev/config/ - Configured with Google Drive & Gemini Interactions API + Model Discovery
 export default defineConfig({
   plugins: [react(), googleDriveDevMiddleware()]
 })

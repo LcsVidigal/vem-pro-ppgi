@@ -24,6 +24,7 @@ dist-ssr
 *.sw?
 
 # Google Cloud Service Account & Secrets
+serviceAccountKey.json
 credentials/
 .env
 .env.*
