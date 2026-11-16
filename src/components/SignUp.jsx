@@ -1,14 +1,21 @@
 import { useState } from 'react'
 import { createUserWithEmailAndPassword } from 'firebase/auth'
-import { auth } from '../firebase'
+import { doc, setDoc } from 'firebase/firestore'
+import { auth, db } from '../firebase'
+import { EDUCATION_OPTIONS } from './UserProfile'
 import './Auth.css'
 
 function SignUp({ onSignUpSuccess, onBackToLogin }) {
+  const [firstName, setFirstName] = useState('')
+  const [lastName, setLastName] = useState('')
+  const [course, setCourse] = useState('')
+  const [education, setEducation] = useState(EDUCATION_OPTIONS[0])
+  const [institution, setInstitution] = useState('')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
-  
+
   // Validation and Feedback States
   const [errors, setErrors] = useState({})
   const [isLoading, setIsLoading] = useState(false)
@@ -16,7 +23,23 @@ function SignUp({ onSignUpSuccess, onBackToLogin }) {
 
   const validateForm = () => {
     const newErrors = {}
-    
+
+    if (!firstName.trim()) {
+      newErrors.firstName = 'O nome é obrigatório.'
+    }
+    if (!lastName.trim()) {
+      newErrors.lastName = 'O sobrenome é obrigatório.'
+    }
+    if (!course.trim()) {
+      newErrors.course = 'O curso é obrigatório (ex: Ciência da Computação).'
+    }
+    if (!education.trim()) {
+      newErrors.education = 'A formação acadêmica é obrigatória.'
+    }
+    if (!institution.trim()) {
+      newErrors.institution = 'A instituição de ensino é obrigatória (ex: UFAM).'
+    }
+
     // Email Validation
     if (!email) {
       newErrors.email = 'O e-mail é obrigatório.'
@@ -64,24 +87,53 @@ function SignUp({ onSignUpSuccess, onBackToLogin }) {
   const handleSubmit = async (e) => {
     e.preventDefault()
     setServerError('')
-    
+
     if (!validateForm()) return
 
     setIsLoading(true)
 
     try {
-      // Create user directly in Firebase Authentication
-      const userCredential = await createUserWithEmailAndPassword(auth, email, password)
-      
-      // Successfully registered and logged in
+      // 1. Cria usuário no Firebase Authentication
+      const userCredential = await createUserWithEmailAndPassword(auth, email.trim(), password)
       const userObject = userCredential.user
-      onSignUpSuccess({
+
+      const cleanFirst = firstName.trim()
+      const cleanLast = lastName.trim()
+      const fullName = `${cleanFirst} ${cleanLast}`.trim()
+
+      // 2. Monta o objeto do usuário com tipo padrão 'aluno'
+      const newUserProfile = {
+        uid: userObject.uid,
         email: userObject.email,
-        name: userObject.email.split('@')[0].toUpperCase(),
-        uid: userObject.uid
-      })
+        firstName: cleanFirst,
+        lastName: cleanLast,
+        name: fullName,
+        course: course.trim(),
+        education: education.trim(),
+        institution: institution.trim(),
+        role: 'aluno', // Tipo de usuário padrão ('aluno' | 'administrador')
+        userType: 'aluno',
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+      }
+
+      // Salva localmente no cache imediatamente
+      try {
+        localStorage.setItem(`user_profile_${userObject.uid}`, JSON.stringify(newUserProfile))
+      } catch {
+        // ignore
+      }
+
+      // 3. Persiste o perfil na coleção 'users' do Firestore
+      try {
+        await setDoc(doc(db, 'users', userObject.uid), newUserProfile)
+      } catch (firestoreErr) {
+        console.warn('Aviso ao gravar perfil inicial no Firestore (salvo em cache local):', firestoreErr)
+      }
+
+      onSignUpSuccess(newUserProfile)
     } catch (err) {
-      console.error("Firebase Registration Error:", err)
+      console.error('Firebase Registration Error:', err)
       setServerError(translateFirebaseError(err))
     } finally {
       setIsLoading(false)
@@ -90,18 +142,19 @@ function SignUp({ onSignUpSuccess, onBackToLogin }) {
 
   return (
     <div className="auth-container">
-      <div className="auth-card">
+      <div className="auth-card" style={{ maxWidth: '560px' }}>
         <div className="auth-header">
           <div className="auth-logo">
-            {/* Elegant SVG Academic Cap Icon */}
             <svg className="auth-logo-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <path d="M22 10v6M2 10l10-5 10 5-10 5z" />
               <path d="M6 12v5c0 2 2 3 6 3s6-1 6-3v-5" />
             </svg>
             <span>Vem Pro PPGI</span>
           </div>
-          <h2 className="auth-title">Criar Conta</h2>
-          <p className="auth-subtitle">Cadastre-se para ter acesso completo à nossa plataforma acadêmica.</p>
+          <h2 className="auth-title">Criar Conta Acadêmica</h2>
+          <p className="auth-subtitle">
+            Preencha seus dados pessoais e acadêmicos para acessar a plataforma.
+          </p>
         </div>
 
         {/* Global Server Error Alert */}
@@ -117,9 +170,93 @@ function SignUp({ onSignUpSuccess, onBackToLogin }) {
         )}
 
         <form onSubmit={handleSubmit} className="auth-form" noValidate>
+          {/* Nome e Sobrenome */}
+          <div className="auth-form-row">
+            <div className="form-group">
+              <label className="form-label" htmlFor="signup-firstName">Nome *</label>
+              <input
+                id="signup-firstName"
+                type="text"
+                value={firstName}
+                onChange={(e) => setFirstName(e.target.value)}
+                className={`auth-input ${errors.firstName ? 'error' : ''}`}
+                placeholder="Seu nome"
+                disabled={isLoading}
+                autoComplete="given-name"
+              />
+              {errors.firstName && <p className="form-error-msg">{errors.firstName}</p>}
+            </div>
+
+            <div className="form-group">
+              <label className="form-label" htmlFor="signup-lastName">Sobrenome *</label>
+              <input
+                id="signup-lastName"
+                type="text"
+                value={lastName}
+                onChange={(e) => setLastName(e.target.value)}
+                className={`auth-input ${errors.lastName ? 'error' : ''}`}
+                placeholder="Seu sobrenome"
+                disabled={isLoading}
+                autoComplete="family-name"
+              />
+              {errors.lastName && <p className="form-error-msg">{errors.lastName}</p>}
+            </div>
+          </div>
+
+          {/* Curso e Formação */}
+          <div className="auth-form-row">
+            <div className="form-group">
+              <label className="form-label" htmlFor="signup-course">Curso *</label>
+              <input
+                id="signup-course"
+                type="text"
+                value={course}
+                onChange={(e) => setCourse(e.target.value)}
+                className={`auth-input ${errors.course ? 'error' : ''}`}
+                placeholder="Ex: Ciência da Computação"
+                disabled={isLoading}
+              />
+              {errors.course && <p className="form-error-msg">{errors.course}</p>}
+            </div>
+
+            <div className="form-group">
+              <label className="form-label" htmlFor="signup-education">Formação *</label>
+              <select
+                id="signup-education"
+                value={education}
+                onChange={(e) => setEducation(e.target.value)}
+                className={`auth-input ${errors.education ? 'error' : ''}`}
+                disabled={isLoading}
+              >
+                {EDUCATION_OPTIONS.map((opt) => (
+                  <option key={opt} value={opt}>
+                    {opt}
+                  </option>
+                ))}
+              </select>
+              {errors.education && <p className="form-error-msg">{errors.education}</p>}
+            </div>
+          </div>
+
+          {/* Instituição de Ensino */}
+          <div className="form-group">
+            <label className="form-label" htmlFor="signup-institution">Instituição de Ensino *</label>
+            <input
+              id="signup-institution"
+              type="text"
+              value={institution}
+              onChange={(e) => setInstitution(e.target.value)}
+              className={`auth-input ${errors.institution ? 'error' : ''}`}
+              placeholder="Ex: UFAM - Universidade Federal do Amazonas"
+              disabled={isLoading}
+              autoComplete="organization"
+            />
+            {errors.institution && <p className="form-error-msg">{errors.institution}</p>}
+          </div>
+
           {/* Email Field */}
           <div className="form-group">
-            <label className="form-label" htmlFor="signup-email">E-mail Acadêmico</label>
+            <label className="form-label" htmlFor="signup-email">E-mail Acadêmico *</label>
             <input
               id="signup-email"
               type="email"
@@ -133,60 +270,59 @@ function SignUp({ onSignUpSuccess, onBackToLogin }) {
             {errors.email && <p className="form-error-msg">{errors.email}</p>}
           </div>
 
-          {/* Password Field */}
-          <div className="form-group">
-            <label className="form-label" htmlFor="signup-password">Senha</label>
-            <div className="input-wrapper">
+          {/* Password & Confirm Password */}
+          <div className="auth-form-row">
+            <div className="form-group">
+              <label className="form-label" htmlFor="signup-password">Senha *</label>
+              <div className="input-wrapper">
+                <input
+                  id="signup-password"
+                  type={showPassword ? 'text' : 'password'}
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  className={`auth-input ${errors.password ? 'error' : ''}`}
+                  placeholder="Mínimo de 6 caracteres"
+                  disabled={isLoading}
+                  autoComplete="new-password"
+                />
+                <button
+                  type="button"
+                  className="password-toggle-btn"
+                  onClick={() => setShowPassword(!showPassword)}
+                  tabIndex="-1"
+                  aria-label={showPassword ? 'Esconder senha' : 'Mostrar senha'}
+                  disabled={isLoading}
+                >
+                  {showPassword ? (
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.49 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24" />
+                      <line x1="1" y1="1" x2="23" y2="23" />
+                    </svg>
+                  ) : (
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+                      <circle cx="12" cy="12" r="3" />
+                    </svg>
+                  )}
+                </button>
+              </div>
+              {errors.password && <p className="form-error-msg">{errors.password}</p>}
+            </div>
+
+            <div className="form-group">
+              <label className="form-label" htmlFor="confirm-password">Confirmar Senha *</label>
               <input
-                id="signup-password"
+                id="confirm-password"
                 type={showPassword ? 'text' : 'password'}
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className={`auth-input ${errors.password ? 'error' : ''}`}
-                placeholder="Mínimo de 6 caracteres"
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                className={`auth-input ${errors.confirmPassword ? 'error' : ''}`}
+                placeholder="Repita sua senha"
                 disabled={isLoading}
                 autoComplete="new-password"
               />
-              <button
-                type="button"
-                className="password-toggle-btn"
-                onClick={() => setShowPassword(!showPassword)}
-                tabIndex="-1"
-                aria-label={showPassword ? "Esconder senha" : "Mostrar senha"}
-                disabled={isLoading}
-              >
-                {showPassword ? (
-                  /* Eye Off Icon */
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.49 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24" />
-                    <line x1="1" y1="1" x2="23" y2="23" />
-                  </svg>
-                ) : (
-                  /* Eye Icon */
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
-                    <circle cx="12" cy="12" r="3" />
-                  </svg>
-                )}
-              </button>
+              {errors.confirmPassword && <p className="form-error-msg">{errors.confirmPassword}</p>}
             </div>
-            {errors.password && <p className="form-error-msg">{errors.password}</p>}
-          </div>
-
-          {/* Confirm Password Field */}
-          <div className="form-group">
-            <label className="form-label" htmlFor="confirm-password">Confirmar Senha</label>
-            <input
-              id="confirm-password"
-              type={showPassword ? 'text' : 'password'}
-              value={confirmPassword}
-              onChange={(e) => setConfirmPassword(e.target.value)}
-              className={`auth-input ${errors.confirmPassword ? 'error' : ''}`}
-              placeholder="Repita sua senha"
-              disabled={isLoading}
-              autoComplete="new-password"
-            />
-            {errors.confirmPassword && <p className="form-error-msg">{errors.confirmPassword}</p>}
           </div>
 
           {/* Submit Register Button */}

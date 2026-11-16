@@ -7,7 +7,7 @@ import StudentQuiz from './StudentQuiz'
 import StudentSimulado from './StudentSimulado'
 import './StudentArea.css'
 
-function StudentArea({ user }) {
+function StudentArea({ user, onOpenProfile }) {
   // Navigation views inside Student Area: 'dashboard' | 'select_area' | 'track' | 'track_study' | 'quiz' | 'simulado' | 'exams'
   const [currentView, setCurrentView] = useState('dashboard')
   const [simuladoInitialTab, setSimuladoInitialTab] = useState('exam') // 'exam' | 'history'
@@ -463,12 +463,26 @@ function StudentArea({ user }) {
     <div className="student-area-container">
       {/* Student Area Header & Welcome Banner */}
       <header className="student-area-header">
-        <div className="student-header-badge">
-          🎓 Painel Acadêmico PPGI UFAM
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '12px' }}>
+          <div className="student-header-badge">
+            🎓 Painel Acadêmico PPGI UFAM • {user?.role === 'administrador' ? 'Administrador' : 'Aluno'}
+          </div>
+          {onOpenProfile && (
+            <button onClick={onOpenProfile} className="nav-btn nav-btn-outline" style={{ fontSize: '13px', padding: '6px 14px' }}>
+              ✏️ Editar Meu Perfil
+            </button>
+          )}
         </div>
         <h1>Área do Aluno</h1>
         <p>
-          Bem-vindo(a), <strong>{user?.name || 'Estudante'}</strong>! Prepare-se com foco e método para o processo seletivo do Programa de Pós-Graduação em Informática.
+          Bem-vindo(a), <strong>{user?.name || 'Estudante'}</strong>!
+          {user?.course || user?.institution ? (
+            <span>
+              {' '}({[user?.course, user?.education, user?.institution].filter(Boolean).join(' • ')})
+            </span>
+          ) : (
+            ' Prepare-se com foco e método para o processo seletivo do Programa de Pós-Graduação em Informática.'
+          )}
         </p>
       </header>
 
@@ -707,6 +721,50 @@ function StudentArea({ user }) {
                   style={{ background: '#22c55e', borderColor: '#22c55e' }}
                 >
                   Acessar Provas Anteriores
+                </button>
+              </div>
+            </article>
+
+            {/* CARD: Meu Perfil Acadêmico (US Editar Perfil) */}
+            <article className="student-dashboard-card">
+              <div className="card-top-row">
+                <div className="card-icon-wrapper" style={{ background: 'rgba(168, 85, 247, 0.14)', color: '#a855f7' }}>
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+                    <circle cx="12" cy="7" r="4" />
+                  </svg>
+                </div>
+                <span className="card-tag" style={{ color: '#a855f7', background: 'rgba(168, 85, 247, 0.15)' }}>
+                  {user?.role === 'administrador' ? 'Perfil: Administrador' : 'Perfil: Aluno'}
+                </span>
+              </div>
+
+              <h2 className="card-title">Meu Perfil Acadêmico</h2>
+              <p className="card-description">
+                Gerencie seus dados pessoais e acadêmicos: nome, sobrenome, curso, formação, instituição de ensino e tipo de usuário sincronizados no Firestore.
+              </p>
+
+              <div className="card-mini-progress" style={{ marginBottom: '16px' }}>
+                <div className="mini-indicators-row" style={{ flexDirection: 'column', alignItems: 'flex-start', gap: '4px' }}>
+                  <span style={{ fontSize: '13px', color: 'var(--text)' }}>
+                    👤 <strong>Nome:</strong> {user?.firstName ? `${user.firstName} ${user.lastName || ''}`.trim() : user?.name || '--'}
+                  </span>
+                  <span style={{ fontSize: '13px', color: 'var(--text)' }}>
+                    🎓 <strong>Curso / Formação:</strong> {user?.course || 'Não informado'} ({user?.education || 'Não informado'})
+                  </span>
+                  <span style={{ fontSize: '13px', color: 'var(--text)' }}>
+                    🏛️ <strong>Instituição:</strong> {user?.institution || 'Não informada'}
+                  </span>
+                </div>
+              </div>
+
+              <div className="card-actions">
+                <button
+                  onClick={() => onOpenProfile && onOpenProfile()}
+                  className="nav-btn nav-btn-primary"
+                  style={{ background: '#a855f7', borderColor: '#a855f7' }}
+                >
+                  Editar Meu Perfil
                 </button>
               </div>
             </article>

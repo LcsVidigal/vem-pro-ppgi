@@ -3,32 +3,37 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
     
-    // 1. Provas Anteriores do PPGI UFAM (Google Drive catalog)
+    // 1. Perfis de Usuários (Aluno padrão / Administrador)
+    match /users/{userId} {
+      allow read, write: if true;
+    }
+
+    // 2. Provas Anteriores do PPGI UFAM (Google Drive catalog)
     match /exams/{examId} {
       allow read, write: if true;
     }
 
-    // 2. Banco de Questões do PPGI UFAM
+    // 3. Banco de Questões do PPGI UFAM
     match /questions/{questionId} {
       allow read, write: if true;
     }
 
-    // 3. Trilhas de Estudo dos Usuários (US12)
+    // 4. Trilhas de Estudo dos Usuários (US12)
     match /study_tracks/{userId} {
       allow read, write: if true;
     }
 
-    // 4. Histórico de Simulados Cronometrados (15 questões / 30 min)
+    // 5. Histórico de Simulados Cronometrados (15 questões / 30 min)
     match /simulado_history/{userId} {
       allow read, write: if true;
     }
 
-    // 5. Configurações Compartilhadas (ex: token do Gemini em settings/gemini)
+    // 6. Configurações Compartilhadas (ex: token do Gemini em settings/gemini)
     match /settings/{docId} {
       allow read, write: if true;
     }
 
-    // 6. Regra geral de desenvolvimento
+    // 7. Regra geral de desenvolvimento
     match /{document=**} {
       allow read, write: if true;
     }

@@ -376,3 +376,17 @@
   font-weight: 600;
   cursor: pointer;
 }
+
+
+/* Two-column grid row for Signup & Profile forms */
+.auth-form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+@media (max-width: 560px) {
+  .auth-form-row {
+    grid-template-columns: 1fr;
+  }
+}
